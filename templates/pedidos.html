@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos{% endblock %}
+
+{% block content %}
+<h4 class="mb-4 text-center">Dashboard de Pedidos</h4>
+
+<!-- Grid de Pedidos -->
+<h3>Pedidos Recentes</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Data do Pedido</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pedido in pedidos %}
+        <tr>
+            <td>{{ pedido.id }}</td>
+            <td>{{ pedido.cliente_email }}</td>
+            <td>{{ pedido.data_pedido }}</td>
+            <td>{{ pedido.status }}</td>
+            <td>
+                <a href="#" class="btn btn-info">Ver</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

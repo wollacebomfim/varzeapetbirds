@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}Carrinho de Compras{% endblock %}
+{% block content %}
+
+<div class="container my-4">
+  <h2 class="text-center mb-4"><i class="bi bi-cart-fill"></i> Carrinho de Compras</h2>
+  
+  {% if request.args.get('pedido') %}
+    <div class="alert alert-success text-center">
+      Pedido realizado com sucesso! Aguarde o contato.
+    </div>
+  {% else %}
+    {% if produtos|length == 0 %}
+      {% if not get_flashed_messages(category_filter=['success']) %}
+        <div class="alert alert-info text-center">
+          Nenhum produto adicionado ao carrinho.
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="card carrinho-card mb-4">
+        <div class="card-header">
+          Produtos no Carrinho
+        </div>
+        <div class="card-body">
+          {% for produto in produtos %}
+          <div class="row align-items-center mb-3">
+            <!-- Thumbnail do produto -->
+            <div class="col-md-2 text-center">
+              {% if produto.imagem %}
+                <img src="{{ url_for('static', filename='uploads/' ~ produto.imagem) }}" alt="{{ produto['nome'] }}" class="img-thumbnail" style="max-width: 80px;">
+              {% else %}
+                <div class="bg-secondary text-white d-flex justify-content-center align-items-center" style="width: 80px; height: 80px;">
+                  <i class="bi bi-image" style="font-size: 2rem;"></i>
+                </div>
+              {% endif %}
+            </div>
+            <!-- Informações do produto -->
+            <div class="col-md-4">
+              <h5 class="mb-1">{{ produto['nome'] }}</h5>
+              <p class="mb-0">R$ {{ produto['preco'] }}</p>
+            </div>
+            <!-- Controle de quantidade -->
+            <div class="col-md-3">
+              <div class="input-group">
+                <button class="btn btn-outline-secondary btn-quantity" type="button" id="decrease_{{ produto['id'] }}">
+                  <i class="bi bi-dash"></i>
+                </button>
+                <input type="number" class="form-control mx-2 text-center quantidade" id="quantidade_{{ produto['id'] }}"
+                       data-produto-id="{{ produto['id'] }}"
+                       value="{{ produto['quantidade_carrinho'] }}" min="1" max="{{ produto['quantidade'] }}">
+                <button class="btn btn-outline-secondary btn-quantity" type="button" id="increase_{{ produto['id'] }}">
+                  <i class="bi bi-plus"></i>
+                </button>
+              </div>
+            </div>
+            <!-- Subtotal -->
+            <div class="col-md-2 text-center">
+              <strong>Subtotal:</strong>
+              <p class="mb-0">R$ {{ produto['quantidade_carrinho'] * produto['preco'] | round(2) }}</p>
+            </div>
+            <!-- Botão remover -->
+            <div class="col-md-1 text-center">
+              <form action="{{ url_for('remove_from_cart', produto_id=produto['id']) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger btn-delete">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+          {% if not loop.last %}
+            <hr>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="text-end mb-4">
+      <h4>Total: R$ <span id="total">{{ total }}</span></h4>
+    </div>
+    
+    {% if produtos|length > 0 %}
+    <!-- Card para o formulário de Fazer Pedido -->
+    <div class="pedido-card">
+      <h4 class="text-center">Dados do Pedido</h4>
+      <form method="POST" action="{{ url_for('fazer_pedido') }}">
+        <div class="mb-3">
+          <label for="nome" class="form-label">
+            <i class="bi bi-person me-2"></i>Nome
+          </label>
+          <input type="text" name="nome" id="nome" class="form-control" placeholder="Seu nome" required>
+        </div>
+        <div class="mb-3">
+          <label for="tipo_pagamento" class="form-label">
+            <i class="bi bi-credit-card me-2"></i>Tipo de Pagamento
+          </label>
+          <select class="form-select" name="tipo_pagamento" id="tipo_pagamento" required>
+            <option value="pix">PIX</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="cartao">Cartão</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="tipo_entrega" class="form-label">
+            <i class="bi bi-truck me-2"></i>Tipo de Entrega
+          </label>
+          <select class="form-select" name="tipo_entrega" id="tipo_entrega" required>
+            <option value="retirar">Retirar</option>
+            <option value="a_combinar">A combinar</option>
+            <option value="entrega">Entrega</option>
+          </select>
+        </div>
+        <!-- Campos de endereço para a opção "a_combinar" -->
+        <div id="enderecoFields" style="display: none;">
+          <div class="mb-3">
+            <label for="rua" class="form-label">
+              <i class="bi bi-geo-alt me-2"></i>Rua
+            </label>
+            <input type="text" name="rua" id="rua" class="form-control" placeholder="Rua">
+          </div>
+          <div class="mb-3">
+            <label for="numero" class="form-label">
+              <i class="bi bi-hash me-2"></i>Número
+            </label>
+            <input type="text" name="numero" id="numero" class="form-control" placeholder="Número">
+          </div>
+          <div class="mb-3">
+            <label for="bairro" class="form-label">
+              <i class="bi bi-building me-2"></i>Bairro
+            </label>
+            <input type="text" name="bairro" id="bairro" class="form-control" placeholder="Bairro">
+          </div>
+          <div class="mb-3">
+            <label for="cidade" class="form-label">
+              <i class="bi bi-geo me-2"></i>Cidade
+            </label>
+            <input type="text" name="cidade" id="cidade" class="form-control" placeholder="Cidade">
+          </div>
+        </div>
+        <!-- Campo oculto para enviar o total -->
+        <input type="hidden" name="total" id="inputTotal" value="{{ total }}">
+        <button type="submit" class="btn btn-primary btn-lg w-100" style="padding: 1.2rem; font-size: 1.5rem;">
+          <i class="bi bi-check-circle me-2"></i> Fazer Pedido
+        </button>
+      </form>
+    </div>
+    {% endif %}
+    
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  function calculateTotal() {
+    let total = 0;
+    document.querySelectorAll('.carrinho-card .row').forEach(item => {
+      const priceText = item.querySelector('.col-md-4 p').textContent.replace('R$ ', '').trim();
+      const price = parseFloat(priceText);
+      const quantity = parseInt(item.querySelector('.quantidade').value);
+      total += price * quantity;
+    });
+    document.getElementById('total').textContent = total.toFixed(2);
+    // Atualiza também o campo hidden do total para envio no formulário
+    document.getElementById('inputTotal').value = total.toFixed(2);
+  }
+
+  function updateCart(produtoId, quantidade) {
+    fetch('/update_cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produto_id: produtoId, quantidade: quantidade })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.produto) {
+        const produtoDiv = document.getElementById(`produto_${produtoId}`);
+        if (data.quantidade == 0) {
+          produtoDiv.remove();
+        } else {
+          const inputQuantidade = produtoDiv.querySelector('.quantidade');
+          inputQuantidade.value = data.quantidade;
+        }
+        calculateTotal();
+      } else {
+        alert('Erro ao atualizar o carrinho.');
+      }
+    });
+  }
+
+  document.querySelectorAll('[id^="increase_"], [id^="decrease_"]').forEach(button => {
+    button.addEventListener('click', function () {
+      const produtoId = this.id.split('_')[1];
+      const input = document.getElementById(`quantidade_${produtoId}`);
+      let quantidade = parseInt(input.value);
+      if (this.id.includes('increase')) {
+        quantidade++;
+      } else {
+        quantidade--;
+      }
+      const maxQuantity = parseInt(input.getAttribute('max'));
+      if (quantidade < 1) quantidade = 1;
+      if (quantidade > maxQuantity) quantidade = maxQuantity;
+      input.value = quantidade;
+      updateCart(produtoId, quantidade);
+    });
+  });
+  
+  document.querySelectorAll('.quantidade').forEach(input => {
+    input.addEventListener('input', function () {
+      const produtoId = this.getAttribute('data-produto-id');
+      let quantidade = parseInt(this.value);
+      if (quantidade < 1) quantidade = 1;
+      const maxQuantity = parseInt(this.getAttribute('max'));
+      if (quantidade > maxQuantity) quantidade = maxQuantity;
+      this.value = quantidade;
+      updateCart(produtoId, quantidade);
+    });
+  });
+  
+  calculateTotal();
+  
+  // Exibe os campos de endereço se o tipo de entrega for "a_combinar"
+  document.getElementById('tipo_entrega').addEventListener('change', function(){
+    if(this.value === 'entrega'){
+      document.getElementById('enderecoFields').style.display = 'block';
+    } else {
+      document.getElementById('enderecoFields').style.display = 'none';
+    }
+  });
+});
+</script>
+  
+{% endblock %}

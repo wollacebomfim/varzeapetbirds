@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Página Inicial{% endblock %}
+{% block content %}
+
+<h3 class="mb-4 text-center">Produtos Disponíveis</h3>
+
+<!-- Área de tags para filtrar produtos por categoria -->
+<div class="mb-4 category-tags text-center">
+  <a href="{{ url_for('home') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-person"></i>Geral</a>
+  <a href="{{ url_for('home', category='ração') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-basket"></i> Ração</a>
+  <a href="{{ url_for('home', category='animais') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-paw"></i> Animais</a>
+  <a href="{{ url_for('home', category='outros') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-grid-3x3-gap"></i> Outros</a>
+  <a href="{{ url_for('home', category='items') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list-check"></i> Items</a>
+</div>
+
+<div class="row">
+    {% for produto in produtos %}
+        <div class="col-md-4 mb-3">
+            <div class="card custom-card" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="card-body" style="flex-grow: 1;">
+                    <!-- Imagem do Produto -->
+                    <div class="mb-3 text-center">
+                        {% if produto.imagem %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ produto.imagem) }}" 
+                                 alt="Imagem do Produto" class="img-fluid" 
+                                 style="height: auto; object-fit: cover;">
+                        {% else %}
+                            <span><i class="bi bi-image"></i> Sem Imagem</span>
+                        {% endif %}
+                    </div>
+                    <!-- Informações do Produto -->
+                    <h5 class="card-title text-left"><i class="bi bi-tag me-2"></i>{{ produto['nome'] }}</h5>
+                    <p class="card-text text-left">
+                        <i class="bi bi-currency-dollar me-2"></i><b>Preço</b>: R$ {{ produto['preco'] }}
+                    </p>
+                    <p class="card-text text-left">
+                        <i class="bi bi-speedometer2 me-2"></i><b>Peso</b>:
+                        {% if produto['peso'] >= 1000 %}
+                            {{ produto['peso'] / 1000 }} kg
+                        {% else %}
+                            {{ produto['peso'] }} g
+                        {% endif %}
+                    </p>
+                    <p class="card-text text-left">
+                        <i class="bi bi-info-circle me-2"></i><b>Descrição</b>: {{ produto['descricao'] }}
+                    </p>
+                </div>
+                <div class="card-footer text-center">
+                    <form action="{{ url_for('add_to_cart', produto_id=produto['id']) }}" method="POST" onsubmit="return handleAddToCart(event);">
+                        <input type="number" name="quantidade" min="1" max="{{ produto['quantidade'] }}" value="1" class="form-control mb-2" required>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-cart-plus me-1"></i> Adicionar ao Carrinho
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Adicione esse modal no final do body no seu base.html ou home.html -->
+<div class="modal fade" id="addToCartModal" tabindex="-1" aria-labelledby="addToCartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addToCartModalLabel">Adicionar ao Carrinho</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          Deseja adicionar mais items?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="irParaCarrinho">Carrinho</button>
+          <button type="button" class="btn btn-primary" id="continuarComprando">Continuar Comprando</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function handleAddToCart(event){
+    event.preventDefault();
+    var form = event.target;
+    // Envia os dados via fetch para o add_to_cart:
+    fetch(form.action, {
+         method: form.method,
+         body: new FormData(form)
+    })
+    .then(response => {
+         // Mostra o modal para a escolha do usuário:
+         var myModal = new bootstrap.Modal(document.getElementById('addToCartModal'));
+         myModal.show();
+
+         document.getElementById('continuarComprando').onclick = function(){
+              myModal.hide();
+              window.location.href = "{{ url_for('home') }}";
+         }
+         document.getElementById('irParaCarrinho').onclick = function(){
+              myModal.hide();
+              window.location.href = "{{ url_for('cart') }}";
+         }
+    })
+    .catch(error => {
+         console.error('Erro ao adicionar produto:', error);
+    });
+    return false;
+}
+</script>
+{% endblock %}

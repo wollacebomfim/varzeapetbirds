@@ -1,0 +1,30 @@
+{% extends 'base.html'%}
+
+{% block content %}
+<!-- Adicione esse modal no seu template, por exemplo, no final do body -->
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="whatsappModalLabel">Finalizar pedido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+      Para finalizar o pedido, vá em finalizar.
+      </div>
+      <div class="modal-footer">
+        <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-success">Finalize</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Exibe o modal assim que a página carregar
+document.addEventListener('DOMContentLoaded', function () {
+    var whatsappModal = new bootstrap.Modal(document.getElementById('whatsappModal'));
+    whatsappModal.show();
+});
+</script>
+{% endblock %}
